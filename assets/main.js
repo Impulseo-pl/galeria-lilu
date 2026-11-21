@@ -1,11 +1,9 @@
-// Galeria Lilu – nawigacja, „Twój dzień w cyklu”, galeria z powiększeniem, mapa
+// Galeria Lilu v3 (wzór victoria-miro.com) – nawigacja, pas prac, formularze SMS, galeria, mapa
 (function () {
   var nav = document.getElementById('nav');
-  var ciemny = document.body.classList.contains('start-ciemny');
-  if (ciemny) {
-    var st = function () { nav.classList.toggle('zjechal', window.scrollY > 40); };
-    window.addEventListener('scroll', st, { passive: true }); st();
-  }
+  // na stronach z obrazem u góry menu jest białe na obrazie; po zjechaniu – biały pasek
+  var st = function () { nav.classList.toggle('zjechal', window.scrollY > 60); };
+  window.addEventListener('scroll', st, { passive: true }); st();
   var b = document.getElementById('burger'), m = document.getElementById('menu');
   if (b && m) b.addEventListener('click', function () {
     var o = m.classList.toggle('otwarte');
@@ -14,9 +12,41 @@
     nav.classList.toggle('menu-otwarte', o);
     document.body.style.overflow = o ? 'hidden' : '';
   });
+  // łagodne pojawianie się zdjęć po wczytaniu (jak na wzorze)
+  [].forEach.call(document.querySelectorAll('img[loading=lazy]'), function (im) {
+    if (im.complete && im.naturalWidth) im.classList.add('zaladowany');
+    else im.addEventListener('load', function () { im.classList.add('zaladowany'); });
+  });
 })();
 
-// Twój dzień w cyklu 366 aniołów (liczone na roku przestępnym, bo cykl ma też 29 lutego)
+// pas „Wybrane prace”
+(function () {
+  var pas = document.getElementById('pas');
+  if (!pas) return;
+  [].forEach.call(document.querySelectorAll('.pas-btn'), function (btn) {
+    btn.addEventListener('click', function () {
+      var kier = +btn.getAttribute('data-kier');
+      var p = pas.querySelector('.praca');
+      pas.scrollBy({ left: kier * (p ? p.offsetWidth + 64 : 400), behavior: 'smooth' });
+    });
+  });
+})();
+
+// formularze: klientka nie ma e-maila, więc formularz składa gotowego SMS-a
+var NUMER = '+48504202547';
+function smsLink(tresc) { return 'sms:' + NUMER + '?&body=' + encodeURIComponent(tresc); }
+(function () {
+  [].forEach.call(document.querySelectorAll('.form-sms'), function (f) {
+    f.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var imie = f.imie.value.trim(), tel = f.tel.value.trim(), w = f.wiad.value.trim();
+      var tresc = w + (imie ? '\n' + imie : '') + (tel ? ', tel. ' + tel : '');
+      location.href = smsLink(tresc);
+    });
+  });
+})();
+
+// anioł na wybrany dzień (cykl 366 – też 29 lutego)
 (function () {
   var fd = document.getElementById('d-dzien'), fm = document.getElementById('d-mies');
   if (!fd || !fm) return;
@@ -24,7 +54,7 @@
   var MIES_M = ['styczeń','luty','marzec','kwiecień','maj','czerwiec','lipiec','sierpień','wrzesień','październik','listopad','grudzień'];
   var DNI = [31,29,31,30,31,30,31,31,30,31,30,31];
   var wynik = document.getElementById('d-wynik'), sms = document.getElementById('d-sms');
-  MIES_M.forEach(function (n, i) { var o = new Option(n, i); fm.add(o); });
+  MIES_M.forEach(function (n, i) { fm.add(new Option(n, i)); });
   function dni(sel) {
     var max = DNI[+fm.value], cur = Math.min(sel || +fd.value || 1, max);
     fd.innerHTML = '';
@@ -32,29 +62,27 @@
     fd.value = cur;
   }
   function licz() {
-    var mi = +fm.value, d = +fd.value;
-    var data = d + ' ' + MIES[mi];
-    wynik.innerHTML = '<b>' + data + '</b>W cyklu jest anioł na każdy dzień roku, także na ten. Zapytaj, jak wygląda.';
-    var tresc = 'Dzień dobry, pytam o Anioła Stróża na ' + data + ' z cyklu 366 obrazów.';
-    sms.href = 'sms:+48504202547?&body=' + encodeURIComponent(tresc);
+    var data = fd.value + ' ' + MIES[+fm.value];
+    wynik.textContent = 'Zapytasz o anioła na ' + data + '. Wiadomość otworzy się w aplikacji SMS.';
+    sms.href = smsLink('Dzień dobry, pytam o Anioła Stróża na ' + data + ' z cyklu 366 obrazów.');
   }
   var dzis = new Date();
   fm.value = dzis.getMonth(); dni(dzis.getDate()); licz();
   fm.addEventListener('change', function () { dni(); licz(); });
   fd.addEventListener('change', licz);
-  document.getElementById('dzien').addEventListener('submit', function (e) { e.preventDefault(); });
 })();
 
-// Galeria: powiększenie z podpisem i strzałkami
+// galeria: powiększenie na białym tle, strzałki, Esc
 (function () {
-  var salon = document.getElementById('salon'), lb = document.getElementById('lb');
-  if (!salon || !lb) return;
-  var kadry = [].slice.call(salon.querySelectorAll('.kadr')), i = 0, ostatni = null;
+  var siatka = document.getElementById('siatka'), lb = document.getElementById('lb');
+  if (!siatka || !lb) return;
+  var kadry = [].slice.call(siatka.querySelectorAll('.dzielo')), i = 0, ostatni = null;
   var im = lb.querySelector('img'), pod = lb.querySelector('.lb-podpis');
   function pokaz(n) {
     i = (n + kadry.length) % kadry.length;
     var k = kadry[i];
-    im.src = k.getAttribute('href'); im.alt = k.dataset.podpis; pod.textContent = k.dataset.podpis;
+    im.src = k.getAttribute('href'); im.alt = k.dataset.podpis;
+    pod.textContent = 'Lilianna Batory, ' + k.dataset.podpis;
   }
   function otworz(n) { ostatni = document.activeElement; pokaz(n); lb.hidden = false; document.body.style.overflow = 'hidden'; lb.querySelector('.lb-x').focus(); }
   function zamknij() { lb.hidden = true; document.body.style.overflow = ''; if (ostatni) ostatni.focus(); }
@@ -71,15 +99,15 @@
   });
 })();
 
-// Mapa dojazdu (OSM w szarości)
+// mapa (OSM w szarości)
 window.addEventListener('load', function () {
   var el = document.getElementById('mapa');
   if (!el || !window.L) return;
   var p = [51.947212, 15.4846989];
   var map = L.map(el, { scrollWheelZoom: false }).setView(p, 15);
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(map);
-  L.circleMarker(p, { radius: 11, color: '#262043', weight: 3, fillColor: '#E8743B', fillOpacity: 1 }).addTo(map)
-    .bindTooltip('Galeria Lilu, Objazdowa 37f/3', { direction: 'top', offset: [0, -10] });
+  L.circleMarker(p, { radius: 9, color: '#fff', weight: 3, fillColor: '#5B4AA3', fillOpacity: 1 }).addTo(map)
+    .bindTooltip('Galeria Lilu, Objazdowa 37f/3', { direction: 'top', offset: [0, -8] });
 });
 
 // LICZNIK WAŻNOŚCI DEMA (K. 09.08: pełne odliczanie dni/godzin/minut/sekund).
