@@ -32,10 +32,9 @@
     fd.value = cur;
   }
   function licz() {
-    var mi = +fm.value, d = +fd.value, n = d;
-    for (var i = 0; i < mi; i++) n += DNI[i];
+    var mi = +fm.value, d = +fd.value;
     var data = d + ' ' + MIES[mi];
-    wynik.innerHTML = '<b>' + data + '</b>to ' + n + '. dzień z 366 w cyklu „Anioł Stróż na każdy dzień roku”.';
+    wynik.innerHTML = '<b>' + data + '</b>W cyklu jest anioł na każdy dzień roku, także na ten. Zapytaj, jak wygląda.';
     var tresc = 'Dzień dobry, pytam o Anioła Stróża na ' + data + ' z cyklu 366 obrazów.';
     sms.href = 'sms:+48504202547?&body=' + encodeURIComponent(tresc);
   }

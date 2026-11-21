@@ -124,7 +124,8 @@ figcaption{font-size:.92rem;color:var(--tusz2);margin-top:10px}
 .dzien-wynik b{font-family:var(--serif);font-weight:400;font-size:1.6rem;display:block;color:var(--fiolet-c);line-height:1.2}
 .dzien-akcje{display:flex;flex-wrap:wrap;align-items:center;gap:12px 20px}
 .dzien-akcje .link.jasny{color:var(--fiolet-c)}
-.cykl-foto{display:grid;grid-template-columns:.8fr 1.2fr;gap:28px;margin-top:72px;align-items:end}
+.cykl-foto{margin-top:72px}
+.cykl-foto figure{max-width:900px}
 
 /* trzy prace */
 .trzy{display:grid;grid-template-columns:repeat(3,1fr);gap:36px;align-items:start}
@@ -164,7 +165,7 @@ figcaption{font-size:.92rem;color:var(--tusz2);margin-top:10px}
 .naglowek-strony h1{max-width:16em;margin-bottom:16px}
 
 /* galeria – salon */
-.salon{columns:3 300px;column-gap:24px}
+.salon{columns:4 220px;column-gap:20px}
 .kadr{display:block;break-inside:avoid;margin-bottom:24px;text-decoration:none;background:var(--papier2);padding:14px 14px 12px;cursor:zoom-in;transition:background .3s}
 .kadr:hover{background:var(--sciana)}
 .kadr img{width:100%}
