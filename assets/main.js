@@ -1,8 +1,10 @@
-// Galeria Lilu v3 (wzór victoria-miro.com) – nawigacja, pas prac, formularze SMS, galeria, mapa
+// Galeria Lilu v4 – monografia: menu, kolor sal przy przewijaniu, odsłanianie, anioł na dzień, formularz e-mail, powiększenie, mapa
+document.documentElement.classList.add('js');
+var MAIL = 'galeria.lilu@gmail.com';
+
 (function () {
   var nav = document.getElementById('nav');
-  // na stronach z obrazem u góry menu jest białe na obrazie; po zjechaniu – biały pasek
-  var st = function () { nav.classList.toggle('zjechal', window.scrollY > 60); };
+  var st = function () { nav.classList.toggle('zjechal', window.scrollY > 80); };
   window.addEventListener('scroll', st, { passive: true }); st();
   var b = document.getElementById('burger'), m = document.getElementById('menu');
   if (b && m) b.addEventListener('click', function () {
@@ -12,48 +14,37 @@
     nav.classList.toggle('menu-otwarte', o);
     document.body.style.overflow = o ? 'hidden' : '';
   });
-  // łagodne pojawianie się zdjęć po wczytaniu (jak na wzorze)
-  [].forEach.call(document.querySelectorAll('img[loading=lazy]'), function (im) {
-    if (im.complete && im.naturalWidth) im.classList.add('zaladowany');
-    else im.addEventListener('load', function () { im.classList.add('zaladowany'); });
-  });
 })();
 
-// pas „Wybrane prace”
+// strona główna: tło przechodzi płynnie w kolor sali, w której jesteś
 (function () {
-  var pas = document.getElementById('pas');
-  if (!pas) return;
-  [].forEach.call(document.querySelectorAll('.pas-btn'), function (btn) {
-    btn.addEventListener('click', function () {
-      var kier = +btn.getAttribute('data-kier');
-      var p = pas.querySelector('.praca');
-      pas.scrollBy({ left: kier * (p ? p.offsetWidth + 64 : 400), behavior: 'smooth' });
+  if (!document.body.classList.contains('start') || !('IntersectionObserver' in window)) return;
+  var sale = [].slice.call(document.querySelectorAll('[data-kolor]'));
+  var io = new IntersectionObserver(function (wpisy) {
+    wpisy.forEach(function (w) {
+      if (w.isIntersecting) document.body.style.backgroundColor = w.target.getAttribute('data-kolor');
     });
-  });
+  }, { rootMargin: '-45% 0px -45% 0px' });
+  sale.forEach(function (s) { io.observe(s); });
 })();
 
-// formularze: klientka nie ma e-maila, więc formularz składa gotowego SMS-a
-var NUMER = '+48504202547';
-function smsLink(tresc) { return 'sms:' + NUMER + '?&body=' + encodeURIComponent(tresc); }
+// odsłanianie obrazów i nagłówków
 (function () {
-  [].forEach.call(document.querySelectorAll('.form-sms'), function (f) {
-    f.addEventListener('submit', function (e) {
-      e.preventDefault();
-      var imie = f.imie.value.trim(), tel = f.tel.value.trim(), w = f.wiad.value.trim();
-      var tresc = w + (imie ? '\n' + imie : '') + (tel ? ', tel. ' + tel : '');
-      location.href = smsLink(tresc);
-    });
-  });
+  if (!('IntersectionObserver' in window)) return;
+  var el = [].slice.call(document.querySelectorAll('.dzielo, .sala-glowa, .list-in, .kolaz figure, .pracownia-glowa, .zam-lista li, .cykl-glowa, .of-txt'));
+  var io = new IntersectionObserver(function (wpisy) {
+    wpisy.forEach(function (w) { if (w.isIntersecting) { w.target.classList.add('widac'); io.unobserve(w.target); } });
+  }, { rootMargin: '0px 0px -8% 0px' });
+  el.forEach(function (e, i) { e.classList.add('odslon'); e.style.transitionDelay = (i % 3) * 90 + 'ms'; io.observe(e); });
 })();
 
-// anioł na wybrany dzień (cykl 366 – też 29 lutego)
+// anioł na wybrany dzień (cykl 366 – także 29 lutego)
 (function () {
-  var fd = document.getElementById('d-dzien'), fm = document.getElementById('d-mies');
-  if (!fd || !fm) return;
+  var fd = document.getElementById('d-dzien'), fm = document.getElementById('d-mies'), a = document.getElementById('d-pytaj');
+  if (!fd || !fm || !a) return;
   var MIES = ['stycznia','lutego','marca','kwietnia','maja','czerwca','lipca','sierpnia','września','października','listopada','grudnia'];
   var MIES_M = ['styczeń','luty','marzec','kwiecień','maj','czerwiec','lipiec','sierpień','wrzesień','październik','listopad','grudzień'];
   var DNI = [31,29,31,30,31,30,31,31,30,31,30,31];
-  var wynik = document.getElementById('d-wynik'), sms = document.getElementById('d-sms');
   MIES_M.forEach(function (n, i) { fm.add(new Option(n, i)); });
   function dni(sel) {
     var max = DNI[+fm.value], cur = Math.min(sel || +fd.value || 1, max);
@@ -63,8 +54,8 @@ function smsLink(tresc) { return 'sms:' + NUMER + '?&body=' + encodeURIComponent
   }
   function licz() {
     var data = fd.value + ' ' + MIES[+fm.value];
-    wynik.textContent = 'Zapytasz o anioła na ' + data + '. Wiadomość otworzy się w aplikacji SMS.';
-    sms.href = smsLink('Dzień dobry, pytam o Anioła Stróża na ' + data + ' z cyklu 366 obrazów.');
+    a.href = 'mailto:' + MAIL + '?subject=' + encodeURIComponent('Anioł Stróż na ' + data) +
+      '&body=' + encodeURIComponent('Dzień dobry, pytam o Anioła Stróża na ' + data + ' z cyklu 366 obrazów.');
   }
   var dzis = new Date();
   fm.value = dzis.getMonth(); dni(dzis.getDate()); licz();
@@ -72,17 +63,29 @@ function smsLink(tresc) { return 'sms:' + NUMER + '?&body=' + encodeURIComponent
   fd.addEventListener('change', licz);
 })();
 
-// galeria: powiększenie na białym tle, strzałki, Esc
+// formularze: składają gotowego maila do artystki
 (function () {
-  var siatka = document.getElementById('siatka'), lb = document.getElementById('lb');
-  if (!siatka || !lb) return;
-  var kadry = [].slice.call(siatka.querySelectorAll('.dzielo')), i = 0, ostatni = null;
-  var im = lb.querySelector('img'), pod = lb.querySelector('.lb-podpis');
+  [].forEach.call(document.querySelectorAll('.form-mail'), function (f) {
+    f.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var imie = f.imie.value.trim(), kontakt = f.kontakt.value.trim(), w = f.wiad.value.trim();
+      var tresc = 'Dzień dobry,\n\n' + (w || 'chcę zapytać o obraz.') + '\n\n' + (imie || '') + (kontakt ? '\nKontakt: ' + kontakt : '');
+      location.href = 'mailto:' + MAIL + '?subject=' + encodeURIComponent(f.dataset.temat || 'Pytanie o obraz') + '&body=' + encodeURIComponent(tresc);
+    });
+  });
+})();
+
+// powiększenie obrazów (wszystkie .powieksz na stronie)
+(function () {
+  var lb = document.getElementById('lb');
+  var kadry = [].slice.call(document.querySelectorAll('.powieksz'));
+  if (!lb || !kadry.length) return;
+  var i = 0, ostatni = null, im = lb.querySelector('img'), pod = lb.querySelector('.lb-podpis'), pyt = lb.querySelector('.lb-pyt');
   function pokaz(n) {
     i = (n + kadry.length) % kadry.length;
     var k = kadry[i];
-    im.src = k.getAttribute('href'); im.alt = k.dataset.podpis;
-    pod.textContent = 'Lilianna Batory, ' + k.dataset.podpis;
+    im.src = k.getAttribute('href'); im.alt = k.dataset.podpis; pod.textContent = k.dataset.podpis;
+    pyt.href = 'mailto:' + MAIL + '?subject=' + encodeURIComponent('Pytanie o obraz: ' + k.dataset.podpis);
   }
   function otworz(n) { ostatni = document.activeElement; pokaz(n); lb.hidden = false; document.body.style.overflow = 'hidden'; lb.querySelector('.lb-x').focus(); }
   function zamknij() { lb.hidden = true; document.body.style.overflow = ''; if (ostatni) ostatni.focus(); }
@@ -99,14 +102,14 @@ function smsLink(tresc) { return 'sms:' + NUMER + '?&body=' + encodeURIComponent
   });
 })();
 
-// mapa (OSM w szarości)
+// mapa (OSM, ciepła szarość)
 window.addEventListener('load', function () {
   var el = document.getElementById('mapa');
   if (!el || !window.L) return;
   var p = [51.947212, 15.4846989];
   var map = L.map(el, { scrollWheelZoom: false }).setView(p, 15);
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(map);
-  L.circleMarker(p, { radius: 9, color: '#fff', weight: 3, fillColor: '#5B4AA3', fillOpacity: 1 }).addTo(map)
+  L.circleMarker(p, { radius: 9, color: '#fff', weight: 3, fillColor: '#2E2550', fillOpacity: 1 }).addTo(map)
     .bindTooltip('Galeria Lilu, Objazdowa 37f/3', { direction: 'top', offset: [0, -8] });
 });
 
